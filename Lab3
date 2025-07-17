@@ -1,0 +1,124 @@
+#include <Arduino_LSM9DS1.h>  // IMU: accelerometer, gyroscope, magnetometer
+#include <Arduino_LPS22HB.h>  // Pressure and temperature sensor (LPS22HB)
+
+char currentMode = '\0';
+
+void setup() {
+  Serial.begin(9600);
+  while (!Serial)
+    ;
+
+  // Initialize IMU
+  if (!IMU.begin()) {
+    Serial.println("Failed to initialize IMU!");
+    while (1)
+      ;
+  }
+
+  // Initialize pressure/temperature sensor
+  if (!BARO.begin()) {
+    Serial.println("Failed to initialize pressure sensor!");
+    while (1)
+      ;
+  }
+
+  Serial.println("System ready. Send a command:");
+  Serial.println("'a' = accelerometer");
+  Serial.println("'g' = gyroscope");
+  Serial.println("'m' = magnetometer");
+  Serial.println("'p' = pressure");
+  Serial.println("'t' = temperature");
+  Serial.println("'x' = stop readings");
+}
+
+void loop() {
+  // Listen for user input
+  if (Serial.available()) {
+    char input = Serial.read();
+
+    // Check if the input is valid
+    if (input == 'a' || input == 'g' || input == 'm' || input == 'p' || input == 't' || input == 'x') {
+      currentMode = input;
+      Serial.print("Switched to mode: ");
+      Serial.println(currentMode);
+    } else {
+      Serial.println("ERROR: Invalid command");
+    }
+  }
+
+  switch (currentMode) {
+    case 'a':
+      {
+        float x, y, z;
+        if (IMU.accelerationAvailable()) {
+          IMU.readAcceleration(x, y, z);
+          Serial.print("Accelerometer (g): X=");
+          Serial.print(x);
+          Serial.print(" Y=");
+          Serial.print(y);
+          Serial.print(" Z=");
+          Serial.println(z);
+        }
+        break;
+      }
+
+    case 'g':
+      {
+        float x, y, z;
+        if (IMU.gyroscopeAvailable()) {
+          IMU.readGyroscope(x, y, z);
+          Serial.print("Gyroscope (dps): X=");
+          Serial.print(x);
+          Serial.print(" Y=");
+          Serial.print(y);
+          Serial.print(" Z=");
+          Serial.println(z);
+        }
+        break;
+      }
+
+    case 'm':
+      {
+        float x, y, z;
+        if (IMU.magneticFieldAvailable()) {
+          IMU.readMagneticField(x, y, z);
+          Serial.print("Magnetometer (uT): X=");
+          Serial.print(x);
+          Serial.print(" Y=");
+          Serial.print(y);
+          Serial.print(" Z=");
+          Serial.println(z);
+        }
+        break;
+      }
+
+    case 'p':
+      {
+        float pressure = BARO.readPressure();  // hPa
+        Serial.print("Pressure (hPa): ");
+        Serial.println(pressure);
+        break;
+      }
+
+    case 't':
+      {
+        float temp = BARO.readTemperature();  // °C
+        Serial.print("Temperature (°C): ");
+        Serial.println(temp);
+        break;
+      }  //unable to virify that this works as the Arduino I recived doesn't have a tempreture sensor but it will read 0°C
+      //also if I put in the lines of code for the humidity sensor this code doesn't work at all on the Arduino I recived
+
+    case 'x':
+      {
+        // Do nothing (paused)
+        break;
+      }
+
+    default:
+      // This should never happen now
+      break;
+  }
+
+  delay(200);  // Read interval
+}
